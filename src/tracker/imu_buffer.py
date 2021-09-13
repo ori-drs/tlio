@@ -31,10 +31,13 @@ class ImuBuffer:
                     axis=0,
                 )(requested_interpolated_tus)
             except ValueError as e:
-                print(
-                    f"Trying to do interpolation at {requested_interpolated_tus} between {last_t_us} and {t_us}"
-                )
-                raise e
+                # print(
+                #     f"Trying to do interpolation at {requested_interpolated_tus} between {last_t_us} and {t_us}"
+                # )
+                # raise e
+                acc_interp = acc.T
+                gyr_interp = gyr.T
+                
         self._add_data(requested_interpolated_tus, acc_interp, gyr_interp)
 
     def _add_data(self, t_us: int, acc, gyr):
@@ -60,8 +63,34 @@ class ImuBuffer:
         """ This returns all the data from ts_begin to ts_end """
         assert isinstance(t_begin_us, int)
         assert isinstance(t_us_end, int)
-        begin_idx = np.where(self.net_t_us == t_begin_us)[0][0]
-        end_idx = np.where(self.net_t_us == t_us_end)[0][0]
+
+        i = 0
+        while(len(np.where(self.net_t_us == t_us_end)[0]) == 0):
+            print(f"edited {i}")
+            t_begin_us -= 2500
+            t_us_end -= 2500
+            i += 1
+        
+
+        try:
+            begin_idx = np.where(self.net_t_us == t_begin_us)[0][0]
+            end_idx = np.where(self.net_t_us == t_us_end)[0][0]
+        except:
+            begin_idx = 0
+            end_idx = 400
+            print("stupid time error")
+            print(self.net_t_us.shape)
+            print(self.net_t_us[0] - t_begin_us)
+            print(self.net_t_us[0] - t_us_end)
+            print(self.net_t_us[-1] - t_us_end)
+            print("here")
+            print(t_us_end)
+            print("wtf")
+            print(np.where(self.net_t_us == t_begin_us))
+            print(np.where(self.net_t_us == t_us_end))
+            print(len(np.where(self.net_t_us == t_us_end)[0]))
+            
+
         net_acc = self.net_acc[begin_idx : end_idx + 1, :]
         net_gyr = self.net_gyr[begin_idx : end_idx + 1, :]
         net_t_us = self.net_t_us[begin_idx : end_idx + 1]

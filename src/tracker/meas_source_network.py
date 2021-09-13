@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from scipy.spatial.transform import Rotation
 from network.covariance_parametrization import DiagonalParam
 from network.model_factory import get_model
 from utils.logging import logging
@@ -34,5 +35,12 @@ class MeasSourceNetwork:
         meas_cov[meas_cov < -4] = -4  # exp(-3) =~ 0.05
         meas_cov = DiagonalParam.vec2Cov(meas_cov).cpu().detach().numpy()[0, :, :]
 
+
+        # imu_to_base = Rotation.from_quat([0.008036, 0.004420, 0.709869, 0.70427]) #xyzw Coyote
+
+        # meas = imu_to_base.apply(meas)
+
         meas = meas.reshape((3, 1))
+
+        
         return meas, meas_cov

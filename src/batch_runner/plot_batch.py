@@ -44,16 +44,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     all_outputs_filter = list(
-        Path.cwd().glob(args.filter_dir + "/" + args.runname_globbing)
+        Path.cwd().glob(args.filter_dir)
     )
     logging.info(f"Found {len(all_outputs_filter)} runs")
 
     for m in all_outputs_filter:
         base_folder = Path(m)
+        print(base_folder)
         logging.info(base_folder)
-        name_run = base_folder.name
+        name_run = "/tlio_output/" + base_folder.name
         # read parameters
-        with open(base_folder.joinpath("./parameters.json"), "r") as f:
+        with open(base_folder.joinpath("./tlio_output/parameters.json"), "r") as f:
             conf_filter = json.load(f)
         pprint(conf_filter)
         if "window_time" in conf_filter.keys():
@@ -69,7 +70,7 @@ if __name__ == "__main__":
             "--data_list",
             f"{args.data_list}",
             "--log_dir",
-            f"{args.filter_dir + '/' + name_run}",
+            f"{args.filter_dir + '/tlio_output/'}",
             "--save_fig",
             "--body_bias",
             "--displacement_time",

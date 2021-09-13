@@ -29,19 +29,19 @@ Dataset
 ├── train.txt
 ├── val.txt
 ├── seq1
-│   ├── atttitude.txt
+│   ├── attitude.txt
 │   ├── calib_state.txt
 │   ├── evolving_state.txt
 │   └── data.hdf5
 ├── seq22
-│   ├── atttitude.txt
+│   ├── attitude.txt
 │   ├── calib_state.txt
 │   ├── evolving_state.txt
 │   └── data.hdf5
 ...
 ```
 
-`data.hdf5` contains raw and calibrated IMU data and processed ground truth data. It is used for both the network and the filter. `calib_state.txt` contains calibration states from VIO and is used for filter initialization. `atttitude.txt` and `evolving_state.txt` are the outputs from AHRS attitude filter and VIO pose estimates. These are not used by the filter, but loaded for comparison / debug purposes.
+`data.hdf5` contains raw and calibrated IMU data and processed ground truth data. It is used for both the network and the filter. `calib_state.txt` contains calibration states from VIO and is used for filter initialization. `attitude.txt` and `evolving_state.txt` are the outputs from AHRS attitude filter and VIO pose estimates. These are not used by the filter, but loaded for comparison / debug purposes.
 
 The generation of `data.hdf5` is specified in `gen_fb_data.py`, which requires interpolated stamped IMU measurement files and time-aligned VIO states files. The user can generate his/her own dataset with a different procedure to obtain the same fields to be used for network training and filter inputs.
 
@@ -67,7 +67,7 @@ Timestamps (t) are in microseconds (us). Each row corresponds to data in a singl
 - `calib_state.txt` VIO calibration states at image rate (used in `data_io.py`)
   - [t, acc_scale_inv (9), gyr_scale_inv (9), gyro_g_sense (9), b_acc (3), b_gyr (3)]
   - Note: Changing calibration states from VIO.
-- `atttitude.txt` AHRS attitude from IMU
+- `attitude.txt` AHRS attitude from IMU
   - [t, qw, qx, qy, qz]
 
 # Network training and evaluation

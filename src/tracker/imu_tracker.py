@@ -37,10 +37,10 @@ class ImuTracker:
         config_from_network = dotdict({})
         with open(model_param_path) as json_file:
             data_json = json.load(json_file)
-            config_from_network["imu_freq_net"] = data_json["imu_freq"]
-            config_from_network["past_time"] = data_json["past_time"]
-            config_from_network["window_time"] = data_json["window_time"]
-            config_from_network["arch"] = data_json["arch"]
+            config_from_network["imu_freq_net"] = 400.0 # data_json["imu_freq"]
+            config_from_network["past_time"] = 0.0 # data_json["past_time"]
+            config_from_network["window_time"] = 1.0 # data_json["window_time"]
+            config_from_network["arch"] = "resnet" #data_json["arch"]
 
         # frequencies and sizes conversion
         if not (

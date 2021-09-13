@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from operator import inv
 import os
 
 import numpy as np
@@ -38,7 +39,9 @@ class ImuTrackerRunner:
                 logging.warning("previous log file erased")
 
         self.outfile = os.path.join(outdir, args.out_filename)
+        self.outfile_tum = os.path.join(outdir, "tum_output.txt")
         self.f_state = open(outfile, "w")
+        self.f_state_tum = open(self.outfile_tum, "w")
         self.f_debug = open(os.path.join(outdir, "debug.txt"), "w")
         logging.info(f"writing to {outfile}")
 
@@ -80,10 +83,12 @@ class ImuTrackerRunner:
 
         # output
         self.log_output_buffer = None
+        self.log_output_buffer_tum = None
 
     def __del__(self):
         try:
             self.f_state.close()
+            self.f_state_tum.close()
             self.f_debug.close()
         except Exception as e:
             logging.exception(e)
@@ -125,15 +130,46 @@ class ImuTrackerRunner:
             ],
             axis=0,
         )
+
+        quaternion = Rotation.from_matrix(R)
+
+        imu_to_base = Rotation.from_quat([0.008036, 0.004420, 0.709869, 0.70427]) #xyzw Coyote
+
+        quat = (imu_to_base.inv() * quaternion)
+
+        euler = quat.as_euler(
+            "xyz", degrees=False
+        )
+
+        quat = Rotation.from_euler("xyz", [-euler[1], euler[0], euler[2]] , degrees=False).as_quat().reshape(4,1)
+
+        tum = np.concatenate(
+            [
+                ts_temp,
+                p,
+                quat
+            ],
+            axis=0,
+        )
+
         vec_flat = np.append(R.ravel(), temp.ravel(), axis=0)
+        tum_flat = tum.ravel()
         if self.log_output_buffer is None:
             self.log_output_buffer = vec_flat
+            self.log_output_buffer_tum = tum_flat
         else:
             self.log_output_buffer = np.vstack((self.log_output_buffer, vec_flat))
+            self.log_output_buffer_tum = np.vstack((self.log_output_buffer_tum, tum_flat))
 
         if self.log_output_buffer.shape[0] > 100:
             np.savetxt(self.f_state, self.log_output_buffer, delimiter=",")
             self.log_output_buffer = None
+
+
+        if self.log_output_buffer_tum.shape[0] > 100:
+            np.savetxt(self.f_state_tum, self.log_output_buffer_tum, delimiter=" ")
+            self.log_output_buffer_tum = None
+
 
     def run_tracker(self, args):
         # initialize debug callbacks

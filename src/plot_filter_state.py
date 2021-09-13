@@ -77,7 +77,7 @@ def imu_integrate(gravity, last_R, last_v, last_p, accel, omega, dt):
 def load_aekf_rotation(attitude_filter_path):
     # load aekf rotation
     aekf_data = np.loadtxt(attitude_filter_path, delimiter=",", skiprows=3)
-    # load atttitude filter rotation
+    # load attitude filter rotation
     ts_aekf = aekf_data[:, 0] * 1e-6
     aekf_r = Rotation.from_quat(
         np.concatenate(
@@ -157,6 +157,10 @@ def plot_error_euclidean(
 # get RPE
 def compute_rpe(rpe_ns, ps, ps_gt, yaw, yaw_gt):
     ns = ps_gt.shape[0]
+    print("liger")
+    print(ns)
+    print(rpe_ns)
+    print(ns - rpe_ns)
     assert ns - rpe_ns > 100
     assert ps.shape == ps_gt.shape
     assert yaw.shape == yaw_gt.shape
@@ -191,6 +195,65 @@ def compute_rpe(rpe_ns, ps, ps_gt, yaw, yaw_gt):
     return rpe_rmse, rpe_rmse_z, relative_yaw_rmse
 
 
+def compute_rpe_distance(rpe_ns, ps, ps_gt, yaw, yaw_gt):
+    ns = ps_gt.shape[0]
+    print("liger")
+    print(ns)
+    assert ns - rpe_ns > 100
+    assert ps.shape == ps_gt.shape
+    assert yaw.shape == yaw_gt.shape
+
+    rpes = []
+    relative_yaw_errors = []
+
+    k = 0
+    distance_traveled = 0
+    for i in range(ns):
+
+        if i == 0:
+            continue
+
+        distance_traveled += np.linalg.norm(ps[i-1,:] - ps[i,:])
+        # print(f"Dist: {ps[i,:]}, {ps[k,:]}")
+        # print(f"Distance Traveled: {distance_traveled}")
+
+        if(distance_traveled) >= 5:
+            chunk = ps[k : i, :]
+            chunk_gt = ps_gt[k : i, :]
+            chunk_yaw = yaw[k : i, :]
+            chunk_yaw_gt = yaw_gt[k : i, :]
+            initial_error_yaw = wrap_rpy(chunk_yaw[0, :] - chunk_yaw_gt[0, :])
+            final_error_p_relative = Rotation.from_euler(
+                "z", initial_error_yaw, degrees=True
+            ).as_matrix().dot((chunk[[-1], :] - chunk[[0], :]).T)[0, :, :].T - (
+                chunk_gt[[-1], :] - chunk_gt[[0], :]
+            )
+            final_error_yaw = wrap_rpy(chunk_yaw[[-1], :] - chunk_yaw_gt[[-1], :])
+            rpes.append(final_error_p_relative)
+            relative_yaw_errors.append(wrap_rpy(final_error_yaw - initial_error_yaw))
+
+            
+            k += 1
+            distance_traveled -= np.linalg.norm(ps[k-1,:] - ps[k,:])
+            if distance_traveled < 0:
+                distance_traveled = 0
+
+
+
+    rpes = np.concatenate(rpes, axis=0)
+    relative_yaw_errors = np.concatenate(relative_yaw_errors, axis=0)
+
+    plt.figure("relative yaw error")
+    plt.plot(relative_yaw_errors)
+    plt.figure("rpes list")
+    plt.plot(rpes)
+    ## compute statistics over z separatly
+    rpe_rmse = np.sqrt(np.mean(np.sum(rpes ** 2, axis=1)))
+    rpe_rmse_z = np.sqrt(np.mean(rpes[:, 2] ** 2))
+    relative_yaw_rmse = np.sqrt(np.mean(relative_yaw_errors ** 2))
+    return rpe_rmse, rpe_rmse_z, relative_yaw_rmse
+
+
 def run(args, dataset):
     plt.close("all")
     if args.dir is not None:
@@ -199,6 +262,8 @@ def run(args, dataset):
         results_folder = os.path.join(args.log_dir, dataset)
 
     try:
+        print("here wtf")
+        print(os.path.join(results_folder, args.log_filename + ".npy"))
         states = np.load(os.path.join(results_folder, args.log_filename + ".npy"))
         save_vio_states = True  # traj is done
     except:
@@ -209,7 +274,7 @@ def run(args, dataset):
             os.path.join(results_folder, args.log_filename), delimiter=","
         )  # traj is still processing
         save_vio_states = False  # traj is done
-
+    
     R_init = states[0, :9].reshape(-1, 3, 3)
     r_init = Rotation.from_matrix(R_init)
     Rs = states[:, :9].reshape(-1, 3, 3)
@@ -479,7 +544,7 @@ def run(args, dataset):
         ref_disp = vio_disp
 
     # obtain biases in the body frame in the same unit
-    attitude_filter_path = osp.join(args.root_dir, dataset, "atttitude.txt")
+    attitude_filter_path = osp.join(args.root_dir, dataset, "calib_state.txt")
     (
         init_gyroScaleInv,
         init_gyroBias,
@@ -563,12 +628,12 @@ def run(args, dataset):
     logging.info(f"Mean Heading error of filter {metric_map['filter']['mhe']}")
 
     def compute_rpe_filter(ns_rpe):
-        rpe_rmse, rpe_rmse_z, relative_yaw_rmse = compute_rpe(
+        rpe_rmse, rpe_rmse_z, relative_yaw_rmse = compute_rpe_distance(
             ns_rpe, ps_filter, ps_gt, euls_filter[:, [2]], euls_gt[:, [2]]
         )
-        logging.info(f"RPE RMSE of filter over {ns_rpe}s: {rpe_rmse}")
-        logging.info(f"RPE RMSE Z of filter over {ns_rpe}s: {rpe_rmse_z}")
-        logging.info(f"RPE RMSE Yaw of filter over {ns_rpe}s: {relative_yaw_rmse}")
+        logging.info(f"RPE RMSE of filter over {1e-3*ns_rpe}s: {rpe_rmse}")
+        logging.info(f"RPE RMSE Z of filter over {1e-3*ns_rpe}s: {rpe_rmse_z}")
+        logging.info(f"RPE RMSE Yaw of filter over {1e-3*ns_rpe}s: {relative_yaw_rmse}")
         metric_map["filter"]["rpe_rmse_" + str(ns_rpe)] = rpe_rmse
         metric_map["filter"]["rpe_rmse_z_" + str(ns_rpe)] = rpe_rmse_z
         metric_map["filter"]["relative_yaw_rmse_" + str(ns_rpe)] = relative_yaw_rmse
@@ -1093,9 +1158,9 @@ def run_on_each_dataset_and_gather_metrics(args, data_names):
         logging.info(f"Plotting dataset {dataset}")
         try:
             results_folder = os.path.join(args.log_dir, dataset)
-            if osp.exists(osp.join(results_folder, "position-3d.png")):
-                logging.info(f"Skipping {dataset} because alraedy processed")
-                continue
+            # if osp.exists(osp.join(results_folder, "position-3d.png")):
+            #     logging.info(f"Skipping {dataset} because alraedy processed")
+            #     continue
             metric_map = run(args, dataset)
             all_metrics[dataset] = metric_map
             with open(args.log_dir + "/metrics.json", "w") as f:
@@ -1203,7 +1268,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--rpe_1", type=bool, default=True)
     parser.add_argument("--rpe_10", type=bool, default=True)
-    parser.add_argument("--rpe_100", type=bool, default=True)
+    parser.add_argument("--rpe_100", type=bool, default=False)
 
     subparsers = parser.add_subparsers()
     parser_bias = subparsers.add_parser("bias")

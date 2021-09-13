@@ -18,7 +18,7 @@ homepage = "https://github.com/CathIAS/not_vio"
 keywords = ['Research', 'Inertial', 'Odometry', 'Deep-learning']
 
 [tool.poetry.dependencies]
-python = "~3.7"
+python = ">=3.7"
 torch = "*"                                                                                               
 numpy = "*"                                                                                                
 matplotlib = "*"                                                                                          

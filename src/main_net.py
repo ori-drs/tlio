@@ -39,14 +39,14 @@ if __name__ == "__main__":
         "--mode", type=str, default="train", choices=["train", "test", "eval"]
     )
     parser.add_argument(
-        "--imu_freq", type=float, default=200.0, help="imu_base_freq is a multiple"
+        "--imu_freq", type=float, default=400.0, help="imu_base_freq is a multiple"
     )
-    parser.add_argument("--imu_base_freq", type=float, default=1000.0)
+    parser.add_argument("--imu_base_freq", type=float, default=400.0)
 
     # ----- perturbation -----
     add_bool_arg(parser, "do_bias_shift", default=True)
     parser.add_argument("--accel_bias_range", type=float, default=0.2)  # 5e-2
-    parser.add_argument("--gyro_bias_range", type=float, default=0.05)  # 1e-3
+    parser.add_argument("--gyro_bias_range", type=float, default=0.005)  # 1e-3
 
     add_bool_arg(parser, "perturb_gravity", default=True)
     parser.add_argument(
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--sample_freq", type=float, default=20.0)  # hz
 
     # ----- plotting and evaluation -----
-    add_bool_arg(parser, "save_plot", default=False)
+    add_bool_arg(parser, "save_plot", default=True)
     parser.add_argument("--rpe_window", type=float, default="2.0")  # s
 
     args = parser.parse_args()

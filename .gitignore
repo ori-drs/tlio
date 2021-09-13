@@ -1,0 +1,5 @@
+src/batch_runner/__pycache__/
+src/dataloader/__pycache__/
+src/network/__pycache__/
+src/tracker/__pycache__/
+src/utils/__pycache__/

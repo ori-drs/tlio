@@ -86,7 +86,7 @@ def save_hdf5(args):
         vio_states = np.loadtxt(osp.join(datapath, "evolving_state.txt"), delimiter=",")
         calib_data = np.loadtxt(osp.join(datapath, "calib_state.txt"), delimiter=",")
         attitudes = np.loadtxt(
-            osp.join(datapath, "atttitude.txt"), delimiter=",", skiprows=3
+            osp.join(datapath, "attitude.txt"), delimiter=",", skiprows=3
         )
 
         # find initial state, start from the 21st output from vio_state
@@ -181,7 +181,7 @@ def save_hdf5(args):
 
         # get offline and factory calibration
         print("obtain offline and factory calibration")
-        with open(osp.join(datapath, "atttitude.txt"), "r") as f:
+        with open(osp.join(datapath, "calib_state.txt"), "r") as f:
             line = f.readline()
             line = f.readline()
         init_calib = np.fromstring(line, sep=",")

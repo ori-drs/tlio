@@ -14,7 +14,7 @@ class ImuCalib:
     @classmethod
     def from_attitude_file(cls, dataset, args):
         ret = cls()
-        attitude_filter_path = osp.join(args.root_dir, dataset, "atttitude.txt")
+        attitude_filter_path = osp.join(args.root_dir, dataset, "calib_state.txt")
         with open(attitude_filter_path, "r") as f:
             line = f.readline()
             line = f.readline()
